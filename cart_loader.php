@@ -83,13 +83,19 @@ if ($cart_exists && isset($_POST['finish'])) {
         $prev_cart = $row['checked_out_cart'];
         $prev_student = $row['student_id'];
 
+        // record removal from previous cart if different
+        if ($prev_cart && $prev_cart != $cart_id) {
+            mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Removed from Cart', '$asset_tag', $prev_cart, 'Removed from cart $prev_cart.', NOW())");
+        }
+
         mysqli_query($dbc, "UPDATE CBLocal SET checked_out_cart=$cart_id, student_id=NULL WHERE asset_tag='$asset_tag'");
 
-        $note = "";
+        $event = $prev_cart ? 'Moved to Cart' : 'Assigned to Cart';
+        $note = '';
         if ($prev_cart && $prev_cart != $cart_id) $note .= "Moved from cart $prev_cart. ";
         if ($prev_student) $note .= "Removed from student $prev_student. ";
         $note .= "Assigned to cart $cart_id.";
-        mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Moved to Cart', '$asset_tag', $cart_id, '$note', NOW())");
+        mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('$event', '$asset_tag', $cart_id, '$note', NOW())");
     }
     $msg = "All devices assigned to cart!";
     $scanned_devices = [];

@@ -30,8 +30,10 @@ if ($cart && isset($_POST['add_device'])) {
         if ($row['student_id']) {
             $msg = "Device $asset_tag is currently assigned to a student and cannot be moved to a cart!";
         } elseif ($row['checked_out_cart'] && $row['checked_out_cart'] != $cart_id) {
+            $old_cart = $row['checked_out_cart'];
             mysqli_query($dbc, "UPDATE CBLocal SET checked_out_cart=$cart_id WHERE asset_tag='$asset_tag'");
-            mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Moved to Cart', '$asset_tag', $cart_id, 'Moved from cart {$row['checked_out_cart']} to cart $cart_id.', NOW())");
+            mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Removed from Cart', '$asset_tag', $old_cart, 'Removed from cart $old_cart.', NOW())");
+            mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Moved to Cart', '$asset_tag', $cart_id, 'Moved from cart $old_cart to cart $cart_id.', NOW())");
             $msg = "Device $asset_tag moved from another cart to this cart.";
         } elseif ($row['checked_out_cart'] == $cart_id) {
             $msg = "Device $asset_tag is already in this cart.";
@@ -69,6 +71,7 @@ if ($move_mode) {
         $new_cart_id = intval($_POST['new_cart_id']);
         $old_cart_id = $found_device['checked_out_cart'];
         mysqli_query($dbc, "UPDATE CBLocal SET checked_out_cart=$new_cart_id WHERE asset_tag='$move_asset_tag'");
+        mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Removed from Cart', '$move_asset_tag', $old_cart_id, 'Removed from cart $old_cart_id.', NOW())");
         mysqli_query($dbc, "INSERT INTO CBEvents (Event, assignedID, cart_id, notes, time) VALUES ('Moved to Cart', '$move_asset_tag', $new_cart_id, 'Moved from cart $old_cart_id to cart $new_cart_id.', NOW())");
         $move_result = "Device $move_asset_tag moved from cart $old_cart_id to cart $new_cart_id.";
         // Reload device info after move
